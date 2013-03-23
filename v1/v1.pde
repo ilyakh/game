@@ -12,6 +12,13 @@ static class Game {
 // color #4 72,76,113
 // color #5 62,62,98
 
+abstract class Movable {
+  Position position;
+  Dimensions dimensions;
+  
+  abstract Position getPosition();
+}
+
 
 class Position {
   protected int x = 0;
@@ -61,16 +68,23 @@ class Dimensions {
 }
 
 class World {
-  Position position;
-  Dimensions dimensions;
+ Position position;
+ Dimensions dimensions;
+  
+ String pattern;
   
  public World () {
      this.position = new Position( 0, 0 );
-     this.dimensions = new Dimensions( 900, 600 );  
+     this.dimensions = new Dimensions( 900, 600 );
+     this.pattern = "G3G1G2G5G1G9G1G3W1W1G1G1G2G3";
  }
  
  public int getGround() {
    return 0;
+ }
+ 
+ public boolean isInTheAir( Movable instance ) {
+   return ( instance.getPosition().Y() > this.getGround() );
  }
  
  public void render() {
@@ -79,17 +93,14 @@ class World {
     rect( 
       this.position.X(), 
       this.position.Y() - this.dimensions.Y(), 
-      this.dimensions.X(), 
+      this.dimensions.X(),
       this.dimensions.Y() / 2
     );
  }
   
 }
 
-class Brick {
-  
-  Position position;
-  Dimensions dimensions;
+class Brick extends Movable {
   
   int jump;
   
@@ -145,20 +156,19 @@ class Brick {
   void move( int distance ) {
     
     // sjekker om Brick er utenfor rammen   
-    int newX = b.getPosition().X() + distance; // ny posisjon
+    int newX = this.getPosition().X() + distance; // ny posisjon
     
     boolean tooFarRight = ( newX >= Game.width );
     boolean tooFarLeft = ( newX < 0 );
+    boolean inTheAir = ( this.getPosition().Y() > 0 );
     
-    if ( !tooFarRight && !tooFarLeft ) {
-      b.position.move( distance, 0 );
+    if ( !tooFarRight && !tooFarLeft && !inTheAir ) {
+      this.position.move( distance, 0 );
     }
   }
   
   void jump() {
-    if ( b.getPosition().Y() == 0 ) {
-      b.position.move( 0, 100 ); // kan ikke hoppe, hvis ikke på bakken
-    }
+      this.position.move( 0, 100 ); // kan ikke hoppe, hvis ikke på bakken
   }
   
 }
@@ -191,9 +201,9 @@ void draw() {
   
   if ( keyPressed ) {
     if ( keyCode == RIGHT ) {
-      b.move( 20 ); 
+      b.move( 5 ); 
     } else if ( keyCode == LEFT ) {
-      b.move( -20 ); 
+      b.move( -5 ); 
     } 
   }
   
@@ -205,8 +215,12 @@ void draw() {
   
 }
 
+
+
 void keyReleased() {
   if ( keyCode == UP ) {
-    b.jump();
+    if ( !w.isInTheAir( b ) ) {
+      b.jump();
+    }
   }
 }
